@@ -110,7 +110,9 @@ export default function PaymentsPage() {
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div>
+            {/* Masaüstü tablo */}
+            <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="bg-slate-50/50 border-b border-slate-100">
@@ -173,6 +175,42 @@ export default function PaymentsPage() {
                 })}
               </tbody>
             </table>
+            </div>
+
+            {/* Mobil kart görünümü */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {filteredPayments.map(payment => {
+                const lease = leases.find(l => l.id === payment.leaseId);
+                const prop = lease ? properties.find(p => p.id === lease.propertyId) : null;
+                const tenant = lease ? tenants.find(t => t.id === lease.tenantId) : null;
+                return (
+                  <div key={payment.id} className="p-4 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-sm shrink-0">
+                        {tenant?.name.charAt(0) || '?'}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-700 truncate">{tenant?.name || 'Bilinmeyen'}</p>
+                        <p className="text-xs text-slate-500 truncate">{prop?.name || '-'}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xs text-slate-400">{new Date(payment.paymentDate).toLocaleDateString('tr-TR')}</span>
+                          <span className="text-xs px-1.5 py-0.5 bg-blue-50 text-blue-700 rounded-full">{payment.method}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <p className="text-sm font-bold text-slate-800">₺{payment.amount.toLocaleString('tr-TR')}</p>
+                      <button
+                        onClick={() => deletePayment(payment.id)}
+                        className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
