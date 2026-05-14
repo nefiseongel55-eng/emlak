@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  phone     String?
+  role      Role     @default(STAFF)
+  password  String
+  status    Boolean  @default(true) // true: Active, false: Passive
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  STAFF
+  READONLY
+}
+
+model Landlord {
+  id         String     @id @default(uuid())
+  name       String
+  type       PersonType
+  tcNo       String     @unique
+  phone      String
+  email      String?
+  address    String?
+  iban       String?
+  notes      String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  properties Property[]
+}
+
+enum PersonType {
+  INDIVIDUAL
+  CORPORATE
+}
+
+model Property {
+  id          String         @id @default(uuid())
+  landlordId  String
+  name        String
+  type        PropertyType
+  address     String
+  city        String
+  district    String
+  tapu        String?
+  brutM2      Float?
+  netM2       Float?
+  rooms       String?
+  floor       String?
+  age         Int?
+  heating     HeatingType?
+  isFurnished Boolean?       @default(false)
+  parking     Boolean?       @default(false)
+  dues        Float?
+  status      PropertyStatus @default(AVAILABLE)
+  notes       String?
+  photos      String[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  landlord Landlord @relation(fields: [landlordId], references: [id], onDelete: Restrict)
+  leases   Lease[]
+}
+
+enum PropertyType {
+  RESIDENTIAL
+  COMMERCIAL
+  LAND
+  STORAGE
+  OTHER
+}
+
+enum HeatingType {
+  NATURAL_GAS
+  COMBI
+  CENTRAL
+  STOVE
+  AC
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  RENTED
+  SOLD
+  MAINTENANCE
+}
+
+model Tenant {
+  id               String   @id @default(uuid())
+  name             String
+  tcNo             String   @unique
+  nationality      String
+  phone            String
+  email            String?
+  occupation       String?
+  workAddress      String?
+  prevAddress      String?
+  emergencyContact String?
+  emergencyPhone   String?
+  notes            String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  leases           Lease[]
+}
+
+model Lease {
+  id            String           @id @default(uuid())
+  propertyId    String
+  tenantId      String
+  moveInDate    DateTime
+  moveOutDate   DateTime?
+  startDate     DateTime
+  endDate       DateTime
+  rentAmount    Float
+  currency      Currency         @default(TRY)
+  dueDay        Int
+  increaseType  IncreaseType
+  increaseRate  Float?
+  deposit       Float?
+  depositStatus DepositStatus?
+  status        LeaseStatus      @default(ACTIVE)
+  contractFile  String?
+  notes         String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  property Property  @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  payments Payment[]
+}
+
+enum Currency {
+  TRY
+  USD
+  EUR
+}
+
+enum IncreaseType {
+  TUFE
+  FIXED_RATE
+  NEGOTIABLE
+}
+
+enum DepositStatus {
+  RECEIVED
+  RETURNED
+  PARTIAL_RETURN
+}
+
+enum LeaseStatus {
+  ACTIVE
+  EXPIRED
+  TERMINATED
+}
+
+model Payment {
+  id             String        @id @default(uuid())
+  leaseId        String
+  period         String        // e.g., "05/2026"
+  dueDate        DateTime
+  paidDate       DateTime?
+  amountExpected Float
+  amountPaid     Float?
+  status         PaymentStatus @default(UNPAID)
+  method         PaymentMethod?
+  delayDays      Int           @default(0)
+  receiptFile    String?
+  notes          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  lease Lease @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+}
+
+enum PaymentStatus {
+  PAID
+  PARTIAL
+  UNPAID
+  OVERDUE
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CREDIT_CARD
+  OTHER
+}
