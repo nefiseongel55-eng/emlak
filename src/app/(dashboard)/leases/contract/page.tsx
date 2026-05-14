@@ -41,10 +41,11 @@ const empty: ContractData = {
 };
 
 function Field({
-  value, onChange, placeholder = '___________', className = '', multiline = false, type = 'text'
+  value, onChange, placeholder = '___________', className = '', multiline = false, type = 'text', style
 }: {
   value: string; onChange: (v: string) => void;
   placeholder?: string; className?: string; multiline?: boolean; type?: string;
+  style?: React.CSSProperties;
 }) {
   if (multiline) {
     return (
@@ -53,6 +54,7 @@ function Field({
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}
         rows={12}
+        style={style}
         className={`field-input w-full bg-transparent resize-none outline-none border-b border-dotted border-slate-400 focus:border-blue-500 placeholder-slate-300 print:border-slate-300 ${className}`}
       />
     );
@@ -63,6 +65,7 @@ function Field({
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
+      style={style}
       className={`field-input bg-transparent outline-none border-b border-dotted border-slate-400 focus:border-blue-500 placeholder-slate-300 print:border-slate-300 ${className}`}
     />
   );
