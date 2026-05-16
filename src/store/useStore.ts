@@ -1,8 +1,19 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
 
+export interface Landlord {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  tcNo: string;
+  iban: string;
+  createdAt: string;
+}
+
 export interface Property {
   id: string;
+  landlordId?: string;
   name: string;
   type: string;
   address: string;
@@ -49,9 +60,22 @@ export interface Payment {
 
 // ── Row mappers (snake_case → camelCase) ─────────────────────────────────────
 
+function mapLandlord(r: Record<string, unknown>): Landlord {
+  return {
+    id: r.id as string,
+    name: r.name as string,
+    phone: r.phone as string,
+    email: (r.email as string) ?? '',
+    tcNo: (r.tc_no as string) ?? '',
+    iban: (r.iban as string) ?? '',
+    createdAt: r.created_at as string,
+  };
+}
+
 function mapProperty(r: Record<string, unknown>): Property {
   return {
     id: r.id as string,
+    landlordId: (r.landlord_id as string) ?? undefined,
     name: r.name as string,
     type: r.type as string,
     address: r.address as string,
@@ -106,6 +130,7 @@ function mapPayment(r: Record<string, unknown>): Payment {
 // ── Store ─────────────────────────────────────────────────────────────────────
 
 interface AppState {
+  landlords: Landlord[];
   properties: Property[];
   tenants: Tenant[];
   leases: Lease[];
@@ -113,6 +138,9 @@ interface AppState {
   loading: boolean;
 
   loadAll: () => Promise<void>;
+
+  addLandlord: (l: Omit<Landlord, 'id' | 'createdAt'>) => Promise<void>;
+  deleteLandlord: (id: string) => Promise<void>;
 
   addProperty: (p: Omit<Property, 'id' | 'createdAt'>) => Promise<void>;
   updateProperty: (id: string, p: Omit<Property, 'id' | 'createdAt'>) => Promise<void>;
@@ -130,6 +158,7 @@ interface AppState {
 }
 
 export const useStore = create<AppState>((set) => ({
+  landlords: [],
   properties: [],
   tenants: [],
   leases: [],
@@ -139,14 +168,16 @@ export const useStore = create<AppState>((set) => ({
   // ── Load all data from Supabase ──────────────────────────────────────────
   loadAll: async () => {
     set({ loading: true });
-    const [{ data: props }, { data: tens }, { data: leas }, { data: pays }] =
+    const [{ data: lords }, { data: props }, { data: tens }, { data: leas }, { data: pays }] =
       await Promise.all([
+        supabase.from('landlords').select('*').order('created_at'),
         supabase.from('properties').select('*').order('created_at'),
         supabase.from('tenants').select('*').order('created_at'),
         supabase.from('leases').select('*').order('created_at'),
         supabase.from('payments').select('*').order('created_at'),
       ]);
     set({
+      landlords: (lords ?? []).map(mapLandlord),
       properties: (props ?? []).map(mapProperty),
       tenants: (tens ?? []).map(mapTenant),
       leases: (leas ?? []).map(mapLease),
@@ -155,11 +186,25 @@ export const useStore = create<AppState>((set) => ({
     });
   },
 
+  // ── Landlords ─────────────────────────────────────────────────────────────
+  addLandlord: async (l) => {
+    const { data } = await supabase
+      .from('landlords')
+      .insert({ name: l.name, phone: l.phone, email: l.email, tc_no: l.tcNo, iban: l.iban })
+      .select().single();
+    if (data) set((s) => ({ landlords: [...s.landlords, mapLandlord(data)] }));
+  },
+
+  deleteLandlord: async (id) => {
+    await supabase.from('landlords').delete().eq('id', id);
+    set((s) => ({ landlords: s.landlords.filter((x) => x.id !== id) }));
+  },
+
   // ── Properties ───────────────────────────────────────────────────────────
   addProperty: async (p) => {
     const { data } = await supabase
       .from('properties')
-      .insert({ name: p.name, type: p.type, address: p.address, city: p.city, district: p.district, status: p.status })
+      .insert({ landlord_id: p.landlordId || null, name: p.name, type: p.type, address: p.address, city: p.city, district: p.district, status: p.status })
       .select().single();
     if (data) set((s) => ({ properties: [...s.properties, mapProperty(data)] }));
   },
@@ -167,7 +212,7 @@ export const useStore = create<AppState>((set) => ({
   updateProperty: async (id, p) => {
     const { data } = await supabase
       .from('properties')
-      .update({ name: p.name, type: p.type, address: p.address, city: p.city, district: p.district, status: p.status })
+      .update({ landlord_id: p.landlordId || null, name: p.name, type: p.type, address: p.address, city: p.city, district: p.district, status: p.status })
       .eq('id', id).select().single();
     if (data) set((s) => ({ properties: s.properties.map((x) => (x.id === id ? mapProperty(data) : x)) }));
   },

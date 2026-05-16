@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { Building2, Users, Wallet, AlertCircle, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { useStore } from '@/store/useStore';
+import TutorialCards from '@/components/TutorialCards';
 
 export default function Dashboard() {
   const { properties, tenants, leases } = useStore();
@@ -47,10 +48,14 @@ export default function Dashboard() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">Genel Bakış</h1>
-        <p className="text-slate-500 mt-1">Hoş geldiniz, işte portföyünüzün güncel durumu.</p>
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Genel Bakış</h1>
+          <p className="text-slate-500 mt-1">Hoş geldiniz, işte portföyünüzün güncel durumu.</p>
+        </div>
       </div>
+
+      <TutorialCards />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

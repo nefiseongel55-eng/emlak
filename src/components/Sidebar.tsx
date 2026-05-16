@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Building2, Users, FileText, CreditCard, LogOut, X } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, FileText, CreditCard, LogOut, X, UserCheck } from 'lucide-react';
 
 const menuItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
+  { icon: UserCheck, label: 'Mülk Sahipleri', href: '/landlords' },
   { icon: Building2, label: 'Mülkler', href: '/properties' },
   { icon: Users, label: 'Kiracılar', href: '/tenants' },
   { icon: FileText, label: 'Kontratlar', href: '/leases' },
